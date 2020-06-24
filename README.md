@@ -22,6 +22,14 @@ Columns:
 	Time when answered was posted,
 	Format of time: Epoch/unix time
 
+Questions for Data Analysis:-
+1.	Total number of answered questions which have been deleted
+2.	Total number of answered questions which have posted anonymously
+3.	Date when most number of questions were asked anonymously
+4.	Percentage of questions answered after 5 minutes of creation
+5.	Median Turn Around Time of answers (Turn Around Time: Total time taken to answer the question)
+6.	First question of all users which are unanswered
+
 
 
 
