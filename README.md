@@ -1,4 +1,4 @@
-# SQL-Project-for-Data-Analysis
+# Data-Analysis-Project-using-Python-and-MySQL
 Questions File contain : 
 Columns:
 	_id: Unique id of question,
