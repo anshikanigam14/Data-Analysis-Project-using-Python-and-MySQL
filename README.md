@@ -21,6 +21,10 @@ Columns:
 	creationDate,
 	Time when answered was posted,
 	Format of time: Epoch/unix time
+	
+	
+
+A company X has an offering where users can ask questions related to their health and get answers by doctors.
 
 Questions for Data Analysis:-
 1.	Total number of answered questions which have been deleted
