@@ -1,4 +1,5 @@
 import os
+import time
 
 import pandas as pd
 import pymysql
@@ -46,3 +47,21 @@ def print_answer_for_query(cursor_object, query, is_batch=False, callback_functi
     else:
         for row in query_result:
             print("Answer:", row)
+
+
+def query_runner(query_inputs):
+    connection_object, cursor_object = get_connection_object_and_cursor()
+    try:
+        for query_input in query_inputs:
+            question_text = query_input.get('question_text')
+            if question_text:
+                print("Question: {question_text}".format(question_text=question_text))
+            start = time.time()
+            print_answer_for_query(cursor_object, query_input['query'], **query_input['kwargs'])
+            end = time.time()
+            print("Query time: {t}".format(t=end - start))
+            print("\n")
+    except Exception as e:
+        print("Exception occurred:{}".format(e))
+    finally:
+        connection_object.close()
