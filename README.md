@@ -1,6 +1,8 @@
 # Data-Analysis-Project-using-Python-and-MySQL
-Questions File contain : 
+Questions File contain :
+
 Columns:
+
 	_id: Unique id of question,
 	userId: Userid who has asked the question,
 	creationDate: Time when question was created,
@@ -15,7 +17,9 @@ Columns:
 	
 	
 Answers File contain: 
+
 Columns:
+
 	parentId: Unique id of question that was answered,
 	userId: User who has answered the question,
 	creationDate,

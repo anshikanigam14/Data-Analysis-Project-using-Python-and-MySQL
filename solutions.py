@@ -1,0 +1,100 @@
+import statistics
+import pandas as pd
+from pandas.io import sql
+import xlrd
+import pymysql
+from sqlalchemy import create_engine
+
+engine = create_engine("mysql+pymysql://{user}:{pw}@localhost/{db}"
+                       .format(user="root",
+                               pw=" ",
+                               db=" "))
+
+#reading ques_data excel file
+df1 = pd.read_excel (r'D:\data.xls')
+#print (df)
+
+#converting unix epoch time to normal date time format
+df1['creationDate']=(pd.to_datetime(df1['creationDate'],unit='ms'))
+#print(df1['creationDate'])
+
+#print(df1)
+
+df1.to_sql(con=engine, name='question_data', if_exists='replace')
+
+
+#reading ans_data excel file
+df2 = pd.read_excel (r'D:\ans_data.xls')
+#print (df2)
+
+#converting unix epoch time to normal date time format
+df2['creationDate']=(pd.to_datetime(df2['creationDate'],unit='ms'))
+#print(df2['creationDate'])
+
+#print(df2)
+
+df2.to_sql(con=engine, name='answer_data', if_exists='replace')
+
+
+#############################################################################################################################################################################
+
+connectionObject = pymysql.connect(host="localhost", user="root", password=" ",
+
+                                     db=" ")
+try:
+
+    cursorObject = connectionObject.cursor()
+    sqlQuery1 = "select count(_id) as total_answered_questions_deleted from question_data where _id in (Select parentid from answer_data) and isdeleted = 1;"
+    cursorObject.execute(sqlQuery1)
+    data1 = cursorObject.fetchone()
+
+    for row in data1:
+        print("Answer 1:",row)
+
+    sqlQuery2 = "select count( _id) as total_answered_questions_anonymously from question_data where  _id in (Select parentid from answer_data) and isAnonymous = 1;"
+    cursorObject.execute(sqlQuery2)
+    data2 = cursorObject.fetchone()
+
+    for row in data2:
+        print("Answer 2:",row)
+
+    sqlQuery3 = "select count(_id), date(creationdate) from question_data where isAnonymous = 1 group by date(creationdate) order by count(_id) desc limit 1;"
+    cursorObject.execute(sqlQuery3)
+    data3 = cursorObject.fetchall()
+
+    for row in data3:
+        print("Answer 3:",row[1])
+
+    sqlQuery4 = "select concat(round((count(distinct a.parentid)/(select count(distinct _id) from question_data)) * 100), '%') as percentage_of_questions_Ans from question_data q inner join answer_data a on q._id = a.parentid where TIMESTAMPDIFF(minute,q.creationdate,a.creationdate) > 5 OR  TIMESTAMPDIFF(second,q.creationdate,a.creationdate) > 300 ;"
+    cursorObject.execute(sqlQuery4)
+    data4 = cursorObject.fetchone()
+
+    for row in data4:
+        print("Answer 4:",row)
+
+    sqlQuery5= "select TIMESTAMPDIFF(second,q.creationdate,a.creationdate)  as tat from question_data q inner join answer_data a on q._id = a.parentid order by tat asc"
+    cursorObject.execute(sqlQuery5)
+    data5 = cursorObject.fetchall()
+    median_tat = statistics.median(data5)
+    print("Answer 5:", median_tat[0])
+
+
+    sqlQuery6 = "with first_unanswered_qued as ( select  userid, _id, creationdate, RANK() OVER ( PARTITION BY userid order by CASE WHEN date(creationdate) THEN minute(creationdate) ELSE second(creationdate) end asc ) order_of_ques from question_data where _id not in (select parentid from answer_data)) select count(distinct _id) from first_unanswered_qued where order_of_ques = 1;"
+    cursorObject.execute(sqlQuery6)
+    data6 = cursorObject.fetchone()
+
+    for row in data6:
+        print("Answer 6:",row)
+
+except Exception as e:
+
+    print("Exeception occured:{}".format(e))
+
+finally:
+
+    connectionObject.close()
+
+
+
+
+
