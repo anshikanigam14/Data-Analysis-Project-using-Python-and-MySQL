@@ -1,28 +1,7 @@
 import statistics
 import pandas as pd
-from pandas.io import sql
-import xlrd
-import pymysql
-import os
-from sqlalchemy import create_engine
 
-
-def get_data_loc(file_name):
-    parent_dir_path = os.path.abspath(os.getcwd())
-    return parent_dir_path + "\\" + file_name
-
-
-def get_engine(db, user, pw):
-    return create_engine("mysql+pymysql://{user}:{pw}@localhost/{db}".format(
-        user=user,
-        pw=pw,
-        db=db
-    ))
-
-
-def read_excel_data(filename):
-    file_path = get_data_loc(filename)
-    return pd.read_excel(r'{file_path}'.format(file_path=file_path))
+from common import get_engine, read_excel_data, get_connection_object_and_cursor, print_answer_for_query
 
 
 def dump_xlsx_to_sql():
@@ -46,27 +25,15 @@ dump_xlsx_to_sql()
 
 #############################################################################################################################################################################
 
-def get_connection_object_and_cursor():
-    """
-    TODO: convert to context manager
-    """
-    connection_object = pymysql.connect(
-        host="localhost", user="root", password="Bohemianrhapsody@14",
-        db="data_analysis_project"
-    )
-    return connection_object, connection_object.cursor()
 
-
-def print_answer_for_query(cursor_object, query, is_batch=False):
-    cursor_object.execute(query)
-    if is_batch:
-        query_result = cursor_object.fetchall()
-    else:
-        query_result = cursor_object.fetchone()
-
+def query_3_callback(query_result):
     for row in query_result:
-        print("Answer:", row)
+        print("Answer:", row[1])
 
+
+def query_5_callback(query_result):
+    median_tat = statistics.median(query_result)
+    print("Answer:", median_tat[0])
 
 try:
     connection_object, cursor_object = get_connection_object_and_cursor()
@@ -83,16 +50,13 @@ try:
     print_answer_for_query(cursor_object, query_2)
 
     query_3 = "select count(_id), date(creationdate) from question_data where isAnonymous = 1 group by date(creationdate) order by count(_id) desc limit 1;"
-    print_answer_for_query(cursor_object, query_3, True)
+    print_answer_for_query(cursor_object, query_3, is_batch=True, callback_function=query_3_callback)
 
     query_4 = "select concat(round((count(distinct a.parentid)/(select count(distinct _id) from question_data)) * 100), '%') as percentage_of_questions_Ans from question_data q inner join answer_data a on q._id = a.parentid where TIMESTAMPDIFF(minute,q.creationdate,a.creationdate) > 5 OR  TIMESTAMPDIFF(second,q.creationdate,a.creationdate) > 300 ;"
     print_answer_for_query(cursor_object, query_4)
 
     sqlQuery5= "select TIMESTAMPDIFF(second,q.creationdate,a.creationdate)  as tat from question_data q inner join answer_data a on q._id = a.parentid order by tat asc"
-    cursor_object.execute(sqlQuery5)
-    data5 = cursor_object.fetchall()
-    median_tat = statistics.median(data5)
-    print("Answer:", median_tat[0])
+    print_answer_for_query(cursor_object, query_3, is_batch=True, callback_function=query_5_callback)
 
     query_6 = "with first_unanswered_qued as ( select  userid, _id, creationdate, RANK() OVER ( PARTITION BY userid order by CASE WHEN date(creationdate) THEN minute(creationdate) ELSE second(creationdate) end asc ) order_of_ques from question_data where _id not in (select parentid from answer_data)) select count(distinct _id) from first_unanswered_qued where order_of_ques = 1;"
     print_answer_for_query(cursor_object, query_6)
